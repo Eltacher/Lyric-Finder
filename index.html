@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lyric Finder</title>
+
+<!-- Google Font (used only for headings) -->
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+/* palette / globals */
+:root{
+  --clr-primary:#5468ff;
+  --clr-primary-dark:#3746c4;
+  --clr-text:#222;
+  --clr-error:#d63737;
+  --clr-success:#3a883a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* layout */
+body{
+  font-family:"Times New Roman", Times, serif;   /* default text */
+  background:#fff;                               /* single surface */
+  color:var(--clr-text);
+  display:flex;justify-content:center;align-items:flex-start;
+  padding:1.5rem;min-height:100vh;
+}
+
+.page{max-width:900px;width:100%;padding:0 1rem;}
+
+/* headings */
+h1,.subtitle{font-family:"Poppins",sans-serif}
+h1{font-size:2.2rem;font-weight:600;text-align:center;margin-bottom:.6rem}
+.subtitle{text-align:center;font-size:1rem;margin-bottom:1.8rem}
+
+/* form */
+.form-row{display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center}
+
+input{
+  flex:1 1 200px;
+  padding:.7rem 1rem;
+  border:2px solid #e0e4ef;
+  border-radius:.6rem;
+  font-size:1rem;
+  transition:border-color .2s;
+}
+input:focus{outline:none;border-color:var(--clr-primary)}
+
+button{
+  background:var(--clr-primary);
+  color:#fff;border:none;border-radius:.6rem;
+  padding:.7rem 1.4rem;font-size:1rem;
+  cursor:pointer;transition:background .2s;
+}
+button:hover{background:var(--clr-primary-dark)}
+
+/* status message */
+#msg{min-height:1.2rem;margin-top:1rem;font-size:.95rem}
+#msg.error{color:var(--clr-error)}
+#msg.success{color:var(--clr-success)}
+
+/* lyrics box */
+#lyrics{
+  margin-top:1rem;padding:1rem;border:1px dashed #d6daf1;border-radius:.6rem;
+  background:#fafbff;min-height:140px;
+  white-space:pre-wrap;overflow:auto;font-size:.95rem;
+}
+
+@media(max-width:480px){
+  h1{font-size:1.7rem}
+}
+</style>
+</head>
+<body>
+  <div class="page">
+    <h1>Find Lyrics</h1>
+    <p class="subtitle">
+      Enter the artist and song name then click <b>Get&nbsp;Lyrics</b>
+    </p>
+
+    <div class="form-row">
+      <input id="artist" placeholder="Artist name">
+      <input id="title"  placeholder="Song name">
+      <button id="btn">Find Lyrics</button>
+    </div>
+
+    <div id="msg"></div>
+    <pre id="lyrics">Lyrics will appear here…</pre>
+  </div>
+
+<script>
+/* main action: fetch & display lyrics */
+async function getLyrics(){
+  const artist = document.getElementById('artist').value.trim();
+  const title  = document.getElementById('title').value.trim();
+  const box    = document.getElementById('lyrics');
+  const msg    = document.getElementById('msg');
+
+  /* clear status, keep placeholder */
+  msg.textContent = ''; msg.className = '';
+
+  if(!artist || !title)
+  {
+    msg.textContent = 'Please fill both fields.'; msg.className = 'error';
+    return;
+  }
+
+  msg.textContent = '⏳ Fetching lyrics…';
+
+  try
+  {
+    const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error();
+
+    const data = await res.json();
+    if(data.lyrics)
+    {
+      box.textContent = data.lyrics;
+      msg.textContent = 'Lyrics loaded ✔'; msg.className = 'success';
+    }
+    else
+    {
+      throw new Error();
+    }
+  }
+  catch{
+    msg.textContent = 'Lyrics not found or network error.'; msg.className = 'error';
+  }
+}
+
+/* trigger search on button click */
+document.getElementById('btn').addEventListener('click', getLyrics);
+
+/* trigger search on Enter key inside either input */
+['artist','title'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown', e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();       // avoid form submission
+      getLyrics();
+    }
+  });
+});
+
+/* ensure placeholder text is set once */
+document.getElementById('lyrics').textContent = 'Lyrics will appear here…';
+</script>
+</body>
+</html>
